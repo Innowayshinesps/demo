@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ repo }} - Repository Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1f36;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        #structure, #readme {
+            background-color: #252d4a;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            overflow-y: auto;
+            height: 600px;
+            border: 2px solid #4a90e2;
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+            transition: all 0.3s ease;
+        }
+        #structure:hover, #readme:hover {
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
+            transform: translateY(-5px);
+        }
+        #fileContent {
+            background-color: #252d4a;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 450px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            line-height: 1.4;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .directory {
+            cursor: pointer;
+            color: #ffd700;
+            transition: color 0.3s ease;
+        }
+        .file {
+            cursor: pointer;
+            color: #4a90e2;
+            transition: color 0.3s ease;
+        }
+        .directory:hover, .file:hover {
+            text-decoration: underline;
+            filter: brightness(120%);
+        }
+        .directory::before {
+            content: '📁 ';
+        }
+        .file::before {
+            content: '📄 ';
+        }
+        .hidden {
+            display: none;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+        .indent-0 { margin-left: 0; }
+        .indent-1 { margin-left: 20px; }
+        .indent-2 { margin-left: 40px; }
+        .indent-3 { margin-left: 60px; }
+        .indent-4 { margin-left: 80px; }
+        #fileContent h3 {
+            color: #4a90e2;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        #fileContent pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        #fileContent strong {
+            color: #4a90e2;
+        }
+        .code-block {
+            background-color: #1e2235;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .comment {
+            color: #7a7e8c;
+        }
+        .btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #3a7bc2;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .no-readme-message {
+            font-style: italic;
+            color: #888;
+            text-align: center;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            #structure, #readme {
+                height: 400px;
+            }
+            #fileContent {
+                min-height: 300px;
+            }
+            .btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            h1, h2 {
+                font-size: 1.5em;
+            }
+            #structure, #readme, #fileContent {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Repository: {{ repo }}</h1>
+    <h2>Username: {{ username }}</h2>
+    <div class="container">
+        <div id="structure">
+            <h3>Directory Structure Summary</h3>
+            {% macro render_structure(items, level=0) %}
+                <ul>
+                {% for item in items %}
+                    {% if item.type == 'dir' %}
+                        <li class="directory indent-{{ level }}" onclick="toggleDir(this)">
+                            {{ item.name }}
+                            {{ render_structure(item.contents, level + 1) }}
+                        </li>
+                    {% else %}
+                        <li class="file indent-{{ level }}" onclick="showFileContent('{{ item.download_url }}', '{{ item.name }}')" data-url="{{ item.download_url }}">
+                            {{ item.name }}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            {% endmacro %}
+            
+            {{ render_structure(structure) }}
+        </div>
+        <div id="readme">
+            <h3>README</h3>
+            <div id="readmeContent">Loading README...</div>
+        </div>
+    </div>
+    <div id="fileContent">
+        <h3>File Content</h3>
+        <pre id="fileContentText">Select a file to view its content.</pre>
+        <button id="downloadBtn" class="btn" style="display:none;" onclick="downloadContent()">Download Documentation</button>
+        <button id="talkToCodeBtn" class="btn" style="display:none;" onclick="talkToCode()">TALK TO CODE</button>
+    </div>
+
+    <script>
+        function toggleDir(element) {
+            var ul = element.querySelector('ul');
+            if (ul) {
+                ul.classList.toggle('hidden');
+            }
+        }
+        
+        let currentFileName = '';
+        let currentFileContent = '';
+
+        function showFileContent(url, filename) {
+            fetch(`/file_content?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`)
+                .then(response => response.text())
+                .then(content => {
+                    currentFileName = filename;
+                    currentFileContent = content;
+                    const formattedContent = filename.toLowerCase() === 'readme.md' ? content : formatContent(content);
+                    document.getElementById('fileContentText').innerHTML = formattedContent;
+                    document.getElementById('downloadBtn').style.display = filename.toLowerCase() === 'readme.md' ? 'none' : 'block';
+                    document.getElementById('talkToCodeBtn').style.display = filename.toLowerCase() === 'readme.md' ? 'none' : 'block';
+                });
+        }
+
+        function formatContent(content) {
+            return content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/^(import.*|from.*)/gm, '<div class="code-block">$1</div>')
+                          .replace(/^(\s*#.*)/gm, '<span class="comment">$1</span>');
+        }
+
+        function downloadContent() {
+            const content = document.getElementById('fileContentText').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'documented_code.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function talkToCode() {
+            if (currentFileName && currentFileContent) {
+                const encodedFilename = encodeURIComponent(currentFileName);
+                const encodedContent = encodeURIComponent(currentFileContent);
+                window.location.href = `/talk_to_code?filename=${encodedFilename}&content=${encodedContent}`;
+            } else {
+                alert('Please select a file first.');
+            }
+        }
+
+        function loadReadme() {
+            const readmeUrl = '{{ structure | tojson | safe }}' 
+                .split('"download_url":')
+                .filter(part => part.includes('README.md'))
+                [0]
+                ?.split('"')[1];
+            
+            if (readmeUrl) {
+                fetch(`/file_content?url=${encodeURIComponent(readmeUrl)}&filename=README.md`)
+                    .then(response => response.text())
+                    .then(content => {
+                        document.getElementById('readmeContent').innerHTML = '<pre>' + content + '</pre>';
+                    });
+            } else {
+                document.getElementById('readmeContent').innerHTML = `
+                    <div class="no-readme-message">
+                        FROM TEAM TALK TO CODE, THERE IS NO DESCRIPTION PROVIDED BY THE DEVELOPER. 
+                        KINDLY USE OUR DEVGURU'S ASSISTANCE TO KNOW MORE ABOUT THE CODE
+                    </div>`;
+            }
+        }
+
+        document.querySelectorAll('.file').forEach(file => {
+            file.onclick = () => showFileContent(file.dataset.url, file.textContent.trim());
+        });
+
+        loadReadme();
+    </script>
+</body>
+</html>

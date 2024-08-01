@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talk to Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e2f;
+            color: #ffffff;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: rgba(44, 44, 68, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid #b853de; /* Added violet border */
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b853de;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            padding: 12px;
+            border: 1px solid #4a1e6b;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #1e1e2f;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #b853de;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #9641be;
+        }
+
+        #responseContainer {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #1e1e2f;
+            border-radius: 6px;
+            border: 1px solid #4a1e6b;
+        }
+
+        #responseContainer h2 {
+            margin-top: 0;
+            color: #b853de;
+            margin-bottom: 15px;
+        }
+
+        #response {
+            white-space: pre-wrap;
+            color: #ffffff;
+            background-color: #1e1e2f;
+            border: 1px solid #4a1e6b;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+        }
+
+        .loading-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #b853de;
+            margin: 0 5px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.5);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 20px;
+                margin: 20px auto;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            input[type="text"],
+            textarea,
+            button {
+                font-size: 14px;
+            }
+
+            #responseContainer {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Talk to Code</h1>
+        <form id="responseForm">
+            <div class="form-group">
+                <label for="filename">Filename:</label>
+                <input type="text" id="filename" name="filename" value="{{ filename }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" readonly>{{ content }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="prompt">Question:</label>
+                <textarea id="prompt" name="prompt" required></textarea>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="responseContainer">
+            <h2>Response:</h2>
+            <div class="loading">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+            <div id="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('responseForm');
+        const responseElement = document.getElementById('response');
+        const loadingElement = document.querySelector('.loading');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const filename = document.getElementById('filename').value;
+            const content = document.getElementById('content').value;
+            const prompt = document.getElementById('prompt').value;
+            
+            // Show loading animation
+            loadingElement.style.display = 'flex';
+            responseElement.textContent = '';
+
+            fetch('/generate_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename, content, prompt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading animation
+                loadingElement.style.display = 'none';
+                responseElement.textContent = data.response;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Hide loading animation
+                loadingElement.style.display = 'none';
+                responseElement.textContent = 'An error occurred while generating the response.';
+            });
+        });
+    </script>
+</body>
+</html>
