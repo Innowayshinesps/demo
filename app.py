@@ -283,5 +283,18 @@ def generate_response():
     model = genai.GenerativeModel('gemini-pro')
     response = model.generate_content(full_prompt)
     return jsonify({'response': response.text})
+
+# New route to test GitHub token
+@app.route('/test_github_token')
+def test_github_token():
+    url = 'https://api.github.com/user'
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code == 200:
+        return jsonify({'message': 'Token is working', 'user': response.json()['login']})
+    else:
+        return jsonify({'error': 'Token is not working', 'status_code': response.status_code}), 400
+
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
     app.run(debug=True)
